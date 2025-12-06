@@ -46,15 +46,49 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        // Show email confirmation dialog
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            title: const Text('✉️ تأیید ایمیل'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'یک ایمیل تأیید برای شما ارسال شد.',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'لطفاً ایمیل ${_emailController.text} را چک کنید و روی لینک تأیید کلیک کنید.',
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'بعد از تأیید، می‌تونید وارد بشید.',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close dialog
+                  Navigator.of(context).pop(); // Go back to login
+                },
+                child: const Text('متوجه شدم'),
+              ),
+            ],
+          ),
         );
       }
     } catch (e) {
+      print('Registration error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
+            content: Text('خطا در ثبت نام: ${e.toString()}'),
             backgroundColor: AppTheme.errorColor,
           ),
         );

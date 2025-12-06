@@ -117,11 +117,18 @@ class AuthService {
       // Load the user
       await _loadCurrentUser();
 
-      if (_currentUser == null) {
-        throw Exception('خطا در بارگذاری اطلاعات کاربر');
-      }
+      // Note: _currentUser will be null until email is confirmed
+      // That's expected behavior
 
-      return _currentUser!;
+      return UserModel(
+        uid: authResponse.user!.id,
+        email: email,
+        username: username,
+        displayName: username,
+        passwordHash: '',
+        role: role,
+        createdAt: DateTime.now(),
+      );
     } catch (e) {
       print('Registration error: $e');
       throw Exception('ثبت نام ناموفق: ${e.toString()}');
