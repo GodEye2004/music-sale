@@ -98,10 +98,14 @@ class _BeatDetailScreenState extends State<BeatDetailScreen> {
     }
 
     // Check if already purchased
-    if (_db.isBeatPurchased(widget.beat.id)) {
+    final isPurchased = await _db.isBeatPurchased(
+      widget.beat.id,
+      currentUser.uid,
+    );
+    if (isPurchased) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('شما قبلاً این بیت را خریداری کرده‌اید'),
+          content: Text('شما قبلاً این بیت را خریداری کردهاید'),
           backgroundColor: AppTheme.warningColor,
         ),
       );
@@ -263,355 +267,374 @@ class _BeatDetailScreenState extends State<BeatDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isPurchased = _db.isBeatPurchased(widget.beat.id);
     final currentUser = _auth.currentUser;
     final isOwnBeat =
         currentUser != null && currentUser.uid == widget.beat.producerId;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.beat.title),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.favorite_border),
-            onPressed: () {
-              // TODO: Add to favorites
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Cover Image
-                  AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: AppTheme.primaryGradient,
-                      ),
-                      child: widget.beat.coverImagePath != null
-                          ? Image.file(
-                              File(widget.beat.coverImagePath!),
-                              fit: BoxFit.cover,
-                            )
-                          : const Center(
-                              child: Icon(
-                                Icons.music_note,
-                                size: 100,
-                                color: Colors.white70,
-                              ),
-                            ),
-                    ),
-                  ),
+    return FutureBuilder<bool>(
+      future: currentUser != null
+          ? _db.isBeatPurchased(widget.beat.id, currentUser.uid)
+          : Future.value(false),
+      builder: (context, purchaseSnapshot) {
+        final isPurchased = purchaseSnapshot.data ?? false;
 
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Title
-                        Text(
-                          widget.beat.title,
-                          style: Theme.of(context).textTheme.displaySmall,
-                        ),
-
-                        const SizedBox(height: 8),
-
-                        // Producer
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.person,
-                              size: 20,
-                              color: AppTheme.textSecondaryColor,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              widget.beat.producerName,
-                              style: Theme.of(context).textTheme.titleLarge,
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Info Cards
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _InfoCard(
-                                icon: Icons.speed,
-                                label: 'BPM',
-                                value: '${widget.beat.bpm}',
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _InfoCard(
-                                icon: Icons.music_note,
-                                label: 'Key',
-                                value: widget.beat.musicalKey,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _InfoCard(
-                                icon: Icons.category,
-                                label: 'Genre',
-                                value: widget.beat.genre,
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        // Description
-                        Text(
-                          'توضیحات:',
-                          style: Theme.of(context).textTheme.headlineMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          widget.beat.description,
-                          style: Theme.of(context).textTheme.bodyLarge,
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        // Pricing Options or Status
-                        if (isOwnBeat) ...[
-                          // Producer's own beat
-                          Card(
-                            color: AppTheme.primaryColor.withOpacity(0.2),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.verified,
-                                    color: AppTheme.primaryColor,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        const Text(
-                                          'بیت شما',
-                                          style: TextStyle(
-                                            color: AppTheme.primaryColor,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          'این بیت متعلق به شماست',
-                                          style: TextStyle(
-                                            color: AppTheme.textSecondaryColor,
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ] else if (!isPurchased) ...[
-                          Text(
-                            'انتخاب لایسنس:',
-                            style: Theme.of(context).textTheme.headlineMedium,
-                          ),
-                          const SizedBox(height: 12),
-
-                          if (widget.beat.mp3Price != null)
-                            _LicenseOption(
-                              type: LicenseType.mp3,
-                              name: 'MP3',
-                              price: widget.beat.mp3Price!,
-                              isSelected: _selectedLicense == LicenseType.mp3,
-                              onTap: () => setState(
-                                () => _selectedLicense = LicenseType.mp3,
-                              ),
-                            ),
-
-                          if (widget.beat.wavPrice != null)
-                            _LicenseOption(
-                              type: LicenseType.wav,
-                              name: 'WAV',
-                              price: widget.beat.wavPrice!,
-                              isSelected: _selectedLicense == LicenseType.wav,
-                              onTap: () => setState(
-                                () => _selectedLicense = LicenseType.wav,
-                              ),
-                            ),
-
-                          if (widget.beat.stemsPrice != null)
-                            _LicenseOption(
-                              type: LicenseType.stems,
-                              name: 'Stems',
-                              price: widget.beat.stemsPrice!,
-                              isSelected: _selectedLicense == LicenseType.stems,
-                              onTap: () => setState(
-                                () => _selectedLicense = LicenseType.stems,
-                              ),
-                            ),
-                        ] else ...[
-                          Card(
-                            color: AppTheme.successColor.withOpacity(0.2),
-                            child: const Padding(
-                              padding: EdgeInsets.all(16),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.check_circle,
-                                    color: AppTheme.successColor,
-                                  ),
-                                  SizedBox(width: 12),
-                                  Text(
-                                    'شما این بیت را خریداری کرده‌اید',
-                                    style: TextStyle(
-                                      color: AppTheme.successColor,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ],
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(widget.beat.title),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.favorite_border),
+                onPressed: () {
+                  // TODO: Add to favorites
+                },
               ),
-            ),
+            ],
           ),
-
-          // Audio Player
-          Container(
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceColor,
-              boxShadow: AppTheme.cardShadow,
-            ),
-            child: Column(
-              children: [
-                // Progress Bar
-                Slider(
-                  value: _position.inSeconds.toDouble(),
-                  max: _duration.inSeconds.toDouble().clamp(1, double.infinity),
-                  onChanged: (value) async {
-                    await _audioPlayer.seek(Duration(seconds: value.toInt()));
-                  },
-                ),
-
-                // Time and Controls
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          body: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(_formatDuration(_position)),
-                      Text(_formatDuration(_duration)),
+                      // Cover Image
+                      AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: AppTheme.primaryGradient,
+                          ),
+                          child: widget.beat.coverImagePath != null
+                              ? Image.file(
+                                  File(widget.beat.coverImagePath!),
+                                  fit: BoxFit.cover,
+                                )
+                              : const Center(
+                                  child: Icon(
+                                    Icons.music_note,
+                                    size: 100,
+                                    color: Colors.white70,
+                                  ),
+                                ),
+                        ),
+                      ),
+
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Title
+                            Text(
+                              widget.beat.title,
+                              style: Theme.of(context).textTheme.displaySmall,
+                            ),
+
+                            const SizedBox(height: 8),
+
+                            // Producer
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.person,
+                                  size: 20,
+                                  color: AppTheme.textSecondaryColor,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  widget.beat.producerName,
+                                  style: Theme.of(context).textTheme.titleLarge,
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // Info Cards
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _InfoCard(
+                                    icon: Icons.speed,
+                                    label: 'BPM',
+                                    value: '${widget.beat.bpm}',
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _InfoCard(
+                                    icon: Icons.music_note,
+                                    label: 'Key',
+                                    value: widget.beat.musicalKey,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _InfoCard(
+                                    icon: Icons.category,
+                                    label: 'Genre',
+                                    value: widget.beat.genre,
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            // Description
+                            Text(
+                              'توضیحات:',
+                              style: Theme.of(context).textTheme.headlineMedium,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              widget.beat.description,
+                              style: Theme.of(context).textTheme.bodyLarge,
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            // Pricing Options or Status
+                            if (isOwnBeat) ...[
+                              // Producer's own beat
+                              Card(
+                                color: AppTheme.primaryColor.withOpacity(0.2),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.verified,
+                                        color: AppTheme.primaryColor,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            const Text(
+                                              'بیت شما',
+                                              style: TextStyle(
+                                                color: AppTheme.primaryColor,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              'این بیت متعلق به شماست',
+                                              style: TextStyle(
+                                                color:
+                                                    AppTheme.textSecondaryColor,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ] else if (!isPurchased) ...[
+                              Text(
+                                'انتخاب لایسنس:',
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.headlineMedium,
+                              ),
+                              const SizedBox(height: 12),
+
+                              if (widget.beat.mp3Price != null)
+                                _LicenseOption(
+                                  type: LicenseType.mp3,
+                                  name: 'MP3',
+                                  price: widget.beat.mp3Price!,
+                                  isSelected:
+                                      _selectedLicense == LicenseType.mp3,
+                                  onTap: () => setState(
+                                    () => _selectedLicense = LicenseType.mp3,
+                                  ),
+                                ),
+
+                              if (widget.beat.wavPrice != null)
+                                _LicenseOption(
+                                  type: LicenseType.wav,
+                                  name: 'WAV',
+                                  price: widget.beat.wavPrice!,
+                                  isSelected:
+                                      _selectedLicense == LicenseType.wav,
+                                  onTap: () => setState(
+                                    () => _selectedLicense = LicenseType.wav,
+                                  ),
+                                ),
+
+                              if (widget.beat.stemsPrice != null)
+                                _LicenseOption(
+                                  type: LicenseType.stems,
+                                  name: 'Stems',
+                                  price: widget.beat.stemsPrice!,
+                                  isSelected:
+                                      _selectedLicense == LicenseType.stems,
+                                  onTap: () => setState(
+                                    () => _selectedLicense = LicenseType.stems,
+                                  ),
+                                ),
+                            ] else ...[
+                              Card(
+                                color: AppTheme.successColor.withOpacity(0.2),
+                                child: const Padding(
+                                  padding: EdgeInsets.all(16),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.check_circle,
+                                        color: AppTheme.successColor,
+                                      ),
+                                      SizedBox(width: 12),
+                                      Text(
+                                        'شما این بیت را خریداری کرده‌اید',
+                                        style: TextStyle(
+                                          color: AppTheme.successColor,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
+              ),
 
-                const SizedBox(height: 8),
-
-                // Play/Pause Button
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+              // Audio Player
+              Container(
+                decoration: BoxDecoration(
+                  color: AppTheme.surfaceColor,
+                  boxShadow: AppTheme.cardShadow,
+                ),
+                child: Column(
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.replay_10),
-                      onPressed: () {
-                        final newPosition =
-                            _position - const Duration(seconds: 10);
-                        _audioPlayer.seek(
-                          newPosition < Duration.zero
-                              ? Duration.zero
-                              : newPosition,
+                    // Progress Bar
+                    Slider(
+                      value: _position.inSeconds.toDouble(),
+                      max: _duration.inSeconds.toDouble().clamp(
+                        1,
+                        double.infinity,
+                      ),
+                      onChanged: (value) async {
+                        await _audioPlayer.seek(
+                          Duration(seconds: value.toInt()),
                         );
                       },
                     ),
-                    const SizedBox(width: 20),
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        gradient: AppTheme.primaryGradient,
-                        shape: BoxShape.circle,
-                        boxShadow: AppTheme.elevatedShadow,
+
+                    // Time and Controls
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(_formatDuration(_position)),
+                          Text(_formatDuration(_duration)),
+                        ],
                       ),
-                      child: IconButton(
-                        icon: Icon(
-                          _isPlaying ? Icons.pause : Icons.play_arrow,
-                          size: 32,
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    // Play/Pause Button
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.replay_10),
+                          onPressed: () {
+                            final newPosition =
+                                _position - const Duration(seconds: 10);
+                            _audioPlayer.seek(
+                              newPosition < Duration.zero
+                                  ? Duration.zero
+                                  : newPosition,
+                            );
+                          },
                         ),
-                        onPressed: _togglePlayPause,
-                        color: Colors.white,
+                        const SizedBox(width: 20),
+                        Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            gradient: AppTheme.primaryGradient,
+                            shape: BoxShape.circle,
+                            boxShadow: AppTheme.elevatedShadow,
+                          ),
+                          child: IconButton(
+                            icon: Icon(
+                              _isPlaying ? Icons.pause : Icons.play_arrow,
+                              size: 32,
+                            ),
+                            onPressed: _togglePlayPause,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 20),
+                        IconButton(
+                          icon: const Icon(Icons.forward_10),
+                          onPressed: () {
+                            final newPosition =
+                                _position + const Duration(seconds: 10);
+                            _audioPlayer.seek(
+                              newPosition > _duration ? _duration : newPosition,
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Purchase Button (only for non-producers)
+                    if (!isPurchased && !isOwnBeat)
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton.icon(
+                            onPressed: _isLoading ? null : _purchaseBeat,
+                            icon: _isLoading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.shopping_cart),
+                            label: Text(
+                              _isLoading ? 'در حال پردازش...' : 'خرید بیت',
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.successColor,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 20),
-                    IconButton(
-                      icon: const Icon(Icons.forward_10),
-                      onPressed: () {
-                        final newPosition =
-                            _position + const Duration(seconds: 10);
-                        _audioPlayer.seek(
-                          newPosition > _duration ? _duration : newPosition,
-                        );
-                      },
-                    ),
                   ],
                 ),
-
-                const SizedBox(height: 16),
-
-                // Purchase Button (only for non-producers)
-                if (!isPurchased && !isOwnBeat)
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton.icon(
-                        onPressed: _isLoading ? null : _purchaseBeat,
-                        icon: _isLoading
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.shopping_cart),
-                        label: Text(
-                          _isLoading ? 'در حال پردازش...' : 'خرید بیت',
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.successColor,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
+        );
+      }, // FutureBuilder builder
+    ); // FutureBuilder
   }
 }
 

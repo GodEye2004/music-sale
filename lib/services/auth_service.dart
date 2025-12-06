@@ -1,20 +1,13 @@
-import 'dart:convert';
-import 'package:crypto/crypto.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:uuid/uuid.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_application_1/config/supabase_config.dart';
 import 'package:flutter_application_1/models/user_model.dart';
-import 'package:flutter_application_1/services/database_service.dart';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
   factory AuthService() => _instance;
   AuthService._internal();
 
-  final DatabaseService _db = DatabaseService();
-  final Uuid _uuid = const Uuid();
-
-  static const String _currentUserIdKey = 'current_user_id';
-  static const String _isLoggedInKey = 'is_logged_in';
+  final _supabase = Supabase.instance.client;
 
   UserModel? _currentUser;
 
@@ -23,27 +16,62 @@ class AuthService {
 
   // Check if user is logged in
   Future<bool> isLoggedIn() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_isLoggedInKey) ?? false;
+    final session = _supabase.auth.currentSession;
+    if (session != null) {
+      await _loadCurrentUser();
+      return _currentUser != null;
+    }
+    return false;
   }
 
   // Initialize auth (check if user was logged in)
   Future<void> init() async {
-    final prefs = await SharedPreferences.getInstance();
-    final isLoggedIn = prefs.getBool(_isLoggedInKey) ?? false;
-
-    if (isLoggedIn) {
-      final userId = prefs.getString(_currentUserIdKey);
-      if (userId != null) {
-        _currentUser = _db.getUserById(userId);
+    // Listen to auth state changes
+    _supabase.auth.onAuthStateChange.listen((data) {
+      final session = data.session;
+      if (session != null) {
+        _loadCurrentUser();
+      } else {
+        _currentUser = null;
       }
+    });
+
+    // Load current user if session exists
+    if (_supabase.auth.currentSession != null) {
+      await _loadCurrentUser();
     }
   }
 
-  // Hash password
-  String _hashPassword(String password) {
-    final bytes = utf8.encode(password);
-    return sha256.convert(bytes).toString();
+  // Load current user from database
+  Future<void> _loadCurrentUser() async {
+    try {
+      final userId = _supabase.auth.currentUser?.id;
+      if (userId == null) return;
+
+      final response = await _supabase
+          .from(SupabaseConfig.usersTable)
+          .select()
+          .eq('id', userId)
+          .single();
+
+      _currentUser = UserModel(
+        uid: response['id'],
+        email: response['email'],
+        username: response['username'],
+        displayName: response['display_name'],
+        passwordHash: '', // Not needed from Supabase
+        role: response['role'] == 'producer'
+            ? UserRole.producer
+            : UserRole.buyer,
+        createdAt: DateTime.parse(response['created_at']),
+        bio: response['bio'],
+        totalEarnings: (response['total_earnings'] ?? 0).toDouble(),
+        pendingBalance: (response['pending_balance'] ?? 0).toDouble(),
+        totalSales: response['total_sales'] ?? 0,
+      );
+    } catch (e) {
+      print('Error loading current user: $e');
+    }
   }
 
   // Register new user
@@ -53,30 +81,40 @@ class AuthService {
     required String password,
     required UserRole role,
   }) async {
-    // Check if email already exists
-    final existingUser = _db.getUserByEmail(email);
-    if (existingUser != null) {
-      throw Exception('کاربری با این ایمیل قبلاً ثبت نام کرده است');
+    try {
+      // Sign up with Supabase Auth
+      final authResponse = await _supabase.auth.signUp(
+        email: email,
+        password: password,
+      );
+
+      if (authResponse.user == null) {
+        throw Exception('ثبت نام ناموفق بود');
+      }
+
+      // Create user profile in database
+      final userPayload = {
+        'id': authResponse.user!.id,
+        'email': email.toLowerCase().trim(),
+        'username': username.trim(),
+        'display_name': username.trim(),
+        'role': role == UserRole.producer ? 'producer' : 'buyer',
+      };
+
+      await _supabase.from(SupabaseConfig.usersTable).insert(userPayload);
+
+      // Load the user
+      await _loadCurrentUser();
+
+      if (_currentUser == null) {
+        throw Exception('خطا در بارگذاری اطلاعات کاربر');
+      }
+
+      return _currentUser!;
+    } catch (e) {
+      print('Registration error: $e');
+      throw Exception('ثبت نام ناموفق: ${e.toString()}');
     }
-
-    // Create new user
-    final user = UserModel(
-      uid: _uuid.v4(),
-      email: email.toLowerCase().trim(),
-      username: username.trim(),
-      displayName: username.trim(),
-      role: role,
-      createdAt: DateTime.now(),
-      passwordHash: _hashPassword(password),
-    );
-
-    // Save to database
-    await _db.addUser(user);
-
-    // Log in the user
-    await _loginUser(user);
-
-    return user;
   }
 
   // Login with email
@@ -84,44 +122,37 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    final user = _db.getUserByEmail(email.toLowerCase().trim());
+    try {
+      final response = await _supabase.auth.signInWithPassword(
+        email: email.toLowerCase().trim(),
+        password: password,
+      );
 
-    if (user == null) {
-      throw Exception('ایمیل یا رمز عبور اشتباه است');
+      if (response.user == null) {
+        throw Exception('ایمیل یا رمز عبور اشتباه است');
+      }
+
+      await _loadCurrentUser();
+
+      if (_currentUser == null) {
+        throw Exception('خطا در بارگذاری اطلاعات کاربر');
+      }
+
+      return _currentUser!;
+    } catch (e) {
+      print('Login error: $e');
+      throw Exception('ورود ناموفق: ایمیل یا رمز عبور اشتباه است');
     }
-
-    final passwordHash = _hashPassword(password);
-    if (user.passwordHash != passwordHash) {
-      throw Exception('ایمیل یا رمز عبور اشتباه است');
-    }
-
-    await _loginUser(user);
-    return user;
-  }
-
-  // Internal method to log in user
-  Future<void> _loginUser(UserModel user) async {
-    _currentUser = user;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_currentUserIdKey, user.uid);
-    await prefs.setBool(_isLoggedInKey, true);
   }
 
   // Logout
   Future<void> logout() async {
+    await _supabase.auth.signOut();
     _currentUser = null;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_currentUserIdKey);
-    await prefs.setBool(_isLoggedInKey, false);
   }
 
   // Refresh current user data from database
   Future<void> refreshCurrentUser() async {
-    if (_currentUser != null) {
-      final updatedUser = _db.getUserById(_currentUser!.uid);
-      if (updatedUser != null) {
-        _currentUser = updatedUser;
-      }
-    }
+    await _loadCurrentUser();
   }
 }

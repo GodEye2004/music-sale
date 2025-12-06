@@ -32,7 +32,7 @@ class _MyBeatsScreenState extends State<MyBeatsScreen> {
     try {
       final currentUser = _auth.currentUser;
       if (currentUser != null) {
-        final beats = _db.getBeatsByProducer(currentUser.uid);
+        final beats = await _db.getBeatsByProducer(currentUser.uid);
         setState(() {
           _myBeats = beats;
         });

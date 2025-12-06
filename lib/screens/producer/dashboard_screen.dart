@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/config/theme.dart';
 import 'package:flutter_application_1/models/user_model.dart';
+import 'package:flutter_application_1/models/transaction_model.dart';
 import 'package:flutter_application_1/services/auth_service.dart';
 import 'package:flutter_application_1/services/database_service.dart';
 import 'package:flutter_application_1/screens/producer/upload_beat_screen.dart';
@@ -75,35 +76,10 @@ class _ProducerDashboardScreenState extends State<ProducerDashboardScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _StatCard(
-                    title: 'موجودی',
-                    value: _currentUser!.getFormattedPendingBalance(),
-                    icon: Icons.account_balance_wallet,
-                    color: AppTheme.primaryColor,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-
-            Row(
-              children: [
-                Expanded(
-                  child: _StatCard(
-                    title: 'فروش',
+                    title: 'فروش‌ها',
                     value: '${_currentUser!.totalSales}',
                     icon: Icons.shopping_cart,
                     color: AppTheme.accentColor,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _StatCard(
-                    title: 'بیت‌ها',
-                    value:
-                        '${_db.getBeatsByProducer(_currentUser!.uid).length}',
-                    icon: Icons.music_note,
-                    color: AppTheme.secondaryColor,
                   ),
                 ),
               ],
@@ -114,7 +90,6 @@ class _ProducerDashboardScreenState extends State<ProducerDashboardScreen> {
             // Settlement Button
             ElevatedButton.icon(
               onPressed: () {
-                // TODO: Navigate to settlement screen
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('صفحه تسویه حساب به زودی...')),
                 );
@@ -148,64 +123,87 @@ class _ProducerDashboardScreenState extends State<ProducerDashboardScreen> {
         },
         icon: const Icon(Icons.add),
         label: const Text('بیت جدید'),
+        backgroundColor: AppTheme.primaryColor,
+        tooltip: 'آپلود بیت جدید',
       ),
     );
   }
 
   Widget _buildRecentSales() {
-    final transactions = _db.getTransactionsByProducer(_currentUser!.uid);
-
-    if (transactions.isEmpty) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            children: [
-              Icon(Icons.receipt_long, size: 60, color: AppTheme.textHintColor),
-              const SizedBox(height: 16),
-              Text(
-                'هنوز فروشی نداشته‌اید',
-                style: Theme.of(context).textTheme.bodyLarge,
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return Column(
-      children: transactions.take(5).map((transaction) {
-        // Get buyer info
-        final buyer = _db.getUserById(transaction.buyerId);
-        final buyerName = buyer?.displayName ?? 'کاربر ناشناس';
-
-        return Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: AppTheme.successColor,
-              child: const Icon(Icons.person, color: Colors.white),
+    return FutureBuilder<List<Transaction>>(
+      future: _db.getTransactionsByProducer(_currentUser!.uid),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Card(
+            child: Padding(
+              padding: EdgeInsets.all(32),
+              child: Center(child: CircularProgressIndicator()),
             ),
-            title: Text(transaction.beatTitle),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('خریدار: $buyerName'),
-                Text('لایسنس: ${transaction.getLicenseTypeName()}'),
-              ],
-            ),
-            trailing: Text(
-              transaction.getFormattedAmount(),
-              style: const TextStyle(
-                color: AppTheme.successColor,
-                fontWeight: FontWeight.bold,
+          );
+        }
+
+        final transactions = snapshot.data ?? [];
+
+        if (transactions.isEmpty) {
+          return Card(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.receipt_long,
+                    size: 60,
+                    color: AppTheme.textHintColor,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'هنوز فروشی نداشته‌اید',
+                    style: Theme.of(context).textTheme.bodyLarge,
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
             ),
-            isThreeLine: true,
-          ),
+          );
+        }
+
+        return Column(
+          children: transactions.take(5).map((trans) {
+            return FutureBuilder<UserModel?>(
+              future: _db.getUserById(trans.buyerId),
+              builder: (context, userSnap) {
+                final buyerName = userSnap.data?.displayName ?? 'کاربر ناشناس';
+
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: AppTheme.successColor,
+                      child: const Icon(Icons.person, color: Colors.white),
+                    ),
+                    title: Text(trans.beatTitle),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('خریدار: $buyerName'),
+                        Text('لایسنس: ${trans.getLicenseTypeName()}'),
+                      ],
+                    ),
+                    trailing: Text(
+                      trans.getFormattedAmount(),
+                      style: const TextStyle(
+                        color: AppTheme.successColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    isThreeLine: true,
+                  ),
+                );
+              },
+            );
+          }).toList(),
         );
-      }).toList(),
+      },
     );
   }
 }

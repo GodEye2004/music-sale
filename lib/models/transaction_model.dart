@@ -27,43 +27,43 @@ enum TransactionStatus {
 @HiveType(typeId: 5)
 class Transaction extends HiveObject {
   @HiveField(0)
-  late String id;
+  final String id;
 
   @HiveField(1)
-  late String buyerId;
+  final String beatId;
 
   @HiveField(2)
-  late String beatId;
+  final String beatTitle;
 
   @HiveField(3)
-  late String beatTitle;
+  final String buyerId;
 
   @HiveField(4)
-  late String producerId;
+  final String producerId;
 
   @HiveField(5)
-  late double amount;
+  final LicenseType licenseType;
 
   @HiveField(6)
-  late LicenseType licenseType;
+  final double amount;
 
   @HiveField(7)
-  late TransactionStatus status;
+  final TransactionStatus status;
 
   @HiveField(8)
-  late DateTime timestamp;
+  final DateTime timestamp;
 
   @HiveField(9)
-  String? transactionReference; // Mock payment reference
+  final String? transactionReference;
 
   Transaction({
     required this.id,
-    required this.buyerId,
     required this.beatId,
     required this.beatTitle,
+    required this.buyerId,
     required this.producerId,
-    required this.amount,
     required this.licenseType,
+    required this.amount,
     required this.status,
     required this.timestamp,
     this.transactionReference,

@@ -1,15 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/config/theme.dart';
+import 'package:flutter_application_1/config/supabase_config.dart';
 import 'package:flutter_application_1/services/database_service.dart';
 import 'package:flutter_application_1/services/auth_service.dart';
 import 'package:flutter_application_1/services/storage_service.dart';
 import 'package:flutter_application_1/screens/auth/login_screen.dart';
 import 'package:flutter_application_1/screens/buyer/home_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
+    // Initialize Supabase
+    print('Initializing Supabase...');
+    await Supabase.initialize(
+      url: SupabaseConfig.supabaseUrl,
+      anonKey: SupabaseConfig.supabaseAnonKey,
+    );
+    print('Supabase initialized');
+
     // Initialize services
     print('Initializing DatabaseService...');
     await DatabaseService().init();

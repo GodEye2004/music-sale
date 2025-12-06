@@ -39,22 +39,11 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final beats = _db.getAllBeats();
-
-      // If no beats, add sample data
-      if (beats.isEmpty) {
-        await _addSampleData();
-        final newBeats = _db.getAllBeats();
-        setState(() {
-          _beats = newBeats;
-          _filteredBeats = newBeats;
-        });
-      } else {
-        setState(() {
-          _beats = beats;
-          _filteredBeats = beats;
-        });
-      }
+      final beats = await _db.getAllBeatsAsync();
+      setState(() {
+        _beats = beats;
+        _filteredBeats = beats;
+      });
     } catch (e) {
       print('Error loading beats: $e');
     } finally {
@@ -62,75 +51,17 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _addSampleData() async {
-    // Add sample beats
-    final sampleBeats = [
-      Beat(
-        id: 'beat1',
-        title: 'Dark Trap Beat',
-        description: 'بیت ترپ تاریک با ملودی خاص',
-        producerId: 'producer1',
-        producerName: 'علی رضایی',
-        genre: 'Trap',
-        bpm: 140,
-        musicalKey: 'Am',
-        price: 500000,
-        previewPath: '',
-        uploadDate: DateTime.now().subtract(const Duration(days: 2)),
-        tags: ['dark', 'trap', 'hard'],
-        mp3Price: 500000,
-        wavPrice: 800000,
-        stemsPrice: 1500000,
-        exclusivePrice: 5000000,
-      ),
-      Beat(
-        id: 'beat2',
-        title: 'Lo-Fi Chill',
-        description: 'بیت لوفای آرام برای استدی',
-        producerId: 'producer1',
-        producerName: 'علی رضایی',
-        genre: 'Lo-Fi',
-        bpm: 85,
-        musicalKey: 'C',
-        price: 350000,
-        previewPath: '',
-        uploadDate: DateTime.now().subtract(const Duration(days: 5)),
-        tags: ['lofi', 'chill', 'relaxing'],
-        mp3Price: 350000,
-        wavPrice: 600000,
-      ),
-      Beat(
-        id: 'beat3',
-        title: 'Hip-Hop Classic',
-        description: 'بیت هیپ‌هاپ کلاسیک با سمپل پیانو',
-        producerId: 'producer2',
-        producerName: 'محمد اکبری',
-        genre: 'Hip-Hop',
-        bpm: 95,
-        musicalKey: 'Gm',
-        price: 450000,
-        previewPath: '',
-        uploadDate: DateTime.now().subtract(const Duration(days: 1)),
-        tags: ['hiphop', 'boom bap', 'classic'],
-        mp3Price: 450000,
-        wavPrice: 750000,
-        stemsPrice: 1200000,
-      ),
-    ];
-
-    for (final beat in sampleBeats) {
-      await _db.addBeat(beat);
-    }
-  }
-
-  void _searchBeats(String query) {
-    setState(() {
-      if (query.isEmpty) {
+  Future<void> _searchBeats(String query) async {
+    if (query.isEmpty) {
+      setState(() {
         _filteredBeats = _beats;
-      } else {
-        _filteredBeats = _db.searchBeats(query);
-      }
-    });
+      });
+    } else {
+      final results = await _db.searchBeats(query);
+      setState(() {
+        _filteredBeats = results;
+      });
+    }
   }
 
   Future<void> _logout() async {

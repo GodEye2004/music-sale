@@ -1,241 +1,186 @@
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_application_1/config/supabase_config.dart';
 import 'package:flutter_application_1/models/beat_model.dart';
 import 'package:flutter_application_1/models/user_model.dart';
 import 'package:flutter_application_1/models/transaction_model.dart';
-import 'package:flutter_application_1/models/settlement_model.dart';
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
   factory DatabaseService() => _instance;
   DatabaseService._internal();
 
-  // Box names
-  static const String _beatsBoxName = 'beats';
-  static const String _usersBoxName = 'users';
-  static const String _transactionsBoxName = 'transactions';
-  static const String _settlementsBoxName = 'settlements';
-  static const String _purchasedBeatsBoxName = 'purchased_beats';
+  final _supabase = Supabase.instance.client;
 
-  // Boxes
-  late Box<Beat> _beatsBox;
-  late Box<UserModel> _usersBox;
-  late Box<Transaction> _transactionsBox;
-  late Box<Settlement> _settlementsBox;
-  late Box<String> _purchasedBeatsBox; // Store beat IDs that user purchased
-
-  // Initialize Hive and open boxes
+  // Initialize (no longer needed for Supabase, but keep for compatibility)
   Future<void> init() async {
-    await Hive.initFlutter();
-
-    // Register adapters
-    if (!Hive.isAdapterRegistered(0)) {
-      Hive.registerAdapter(BeatAdapter());
-    }
-    if (!Hive.isAdapterRegistered(1)) {
-      Hive.registerAdapter(UserRoleAdapter());
-    }
-    if (!Hive.isAdapterRegistered(2)) {
-      Hive.registerAdapter(UserModelAdapter());
-    }
-    if (!Hive.isAdapterRegistered(3)) {
-      Hive.registerAdapter(LicenseTypeAdapter());
-    }
-    if (!Hive.isAdapterRegistered(4)) {
-      Hive.registerAdapter(TransactionStatusAdapter());
-    }
-    if (!Hive.isAdapterRegistered(5)) {
-      Hive.registerAdapter(TransactionAdapter());
-    }
-    if (!Hive.isAdapterRegistered(6)) {
-      Hive.registerAdapter(SettlementStatusAdapter());
-    }
-    if (!Hive.isAdapterRegistered(7)) {
-      Hive.registerAdapter(SettlementAdapter());
-    }
-
-    // Open boxes with migration handling
-    try {
-      _beatsBox = await Hive.openBox<Beat>(_beatsBoxName);
-    } catch (e) {
-      print('Error opening beats box, clearing: $e');
-      await Hive.deleteBoxFromDisk(_beatsBoxName);
-      _beatsBox = await Hive.openBox<Beat>(_beatsBoxName);
-    }
-
-    try {
-      _usersBox = await Hive.openBox<UserModel>(_usersBoxName);
-    } catch (e) {
-      print('Error opening users box, clearing: $e');
-      await Hive.deleteBoxFromDisk(_usersBoxName);
-      _usersBox = await Hive.openBox<UserModel>(_usersBoxName);
-    }
-
-    try {
-      _transactionsBox = await Hive.openBox<Transaction>(_transactionsBoxName);
-    } catch (e) {
-      print('Error opening transactions box, clearing: $e');
-      await Hive.deleteBoxFromDisk(_transactionsBoxName);
-      _transactionsBox = await Hive.openBox<Transaction>(_transactionsBoxName);
-    }
-
-    try {
-      _settlementsBox = await Hive.openBox<Settlement>(_settlementsBoxName);
-    } catch (e) {
-      print('Error opening settlements box, clearing: $e');
-      await Hive.deleteBoxFromDisk(_settlementsBoxName);
-      _settlementsBox = await Hive.openBox<Settlement>(_settlementsBoxName);
-    }
-
-    try {
-      _purchasedBeatsBox = await Hive.openBox<String>(_purchasedBeatsBoxName);
-    } catch (e) {
-      print('Error opening purchased beats box, clearing: $e');
-      await Hive.deleteBoxFromDisk(_purchasedBeatsBoxName);
-      _purchasedBeatsBox = await Hive.openBox<String>(_purchasedBeatsBoxName);
-    }
+    print('DatabaseService initialized with Supabase');
   }
 
   // ==================== BEAT OPERATIONS ====================
 
   // Add beat
   Future<void> addBeat(Beat beat) async {
-    await _beatsBox.put(beat.id, beat);
+    final payload = {
+      'id': beat.id,
+      'title': beat.title,
+      'description': beat.description,
+      'producer_id': beat.producerId,
+      'genre': beat.genre,
+      'bpm': beat.bpm,
+      'musical_key': beat.musicalKey,
+      'price': beat.price,
+      'audio_url': beat.previewPath,
+      'cover_url': beat.coverImagePath ?? '',
+      'tags': beat.tags,
+      'mp3_price': beat.mp3Price,
+      'wav_price': beat.wavPrice,
+      'stems_price': beat.stemsPrice,
+      'exclusive_price': beat.exclusivePrice,
+    };
+
+    await _supabase.from(SupabaseConfig.beatsTable).insert(payload);
   }
 
   // Get all beats
   List<Beat> getAllBeats() {
-    return _beatsBox.values.toList();
+    // This will be replaced with real-time stream
+    // For now, return empty and use stream in UI
+    return [];
+  }
+
+  // Get all beats (async version for Supabase)
+  Future<List<Beat>> getAllBeatsAsync() async {
+    final response = await _supabase
+        .from(SupabaseConfig.beatsTable)
+        .select()
+        .order('created_at', ascending: false);
+
+    return (response as List).map((json) => _beatFromJson(json)).toList();
   }
 
   // Get beat by ID
-  Beat? getBeatById(String id) {
-    return _beatsBox.get(id);
+  Future<Beat?> getBeatById(String id) async {
+    try {
+      final response = await _supabase
+          .from(SupabaseConfig.beatsTable)
+          .select()
+          .eq('id', id)
+          .single();
+
+      return _beatFromJson(response);
+    } catch (e) {
+      return null;
+    }
   }
 
   // Get beats by producer ID
-  List<Beat> getBeatsByProducer(String producerId) {
-    return _beatsBox.values
-        .where((beat) => beat.producerId == producerId)
-        .toList();
+  Future<List<Beat>> getBeatsByProducer(String producerId) async {
+    final response = await _supabase
+        .from(SupabaseConfig.beatsTable)
+        .select()
+        .eq('producer_id', producerId)
+        .order('created_at', ascending: false);
+
+    return (response as List).map((json) => _beatFromJson(json)).toList();
   }
 
   // Search beats
-  List<Beat> searchBeats(String query) {
-    query = query.toLowerCase();
-    return _beatsBox.values.where((beat) {
-      return beat.title.toLowerCase().contains(query) ||
-          beat.producerName.toLowerCase().contains(query) ||
-          beat.genre.toLowerCase().contains(query) ||
-          beat.tags.any((tag) => tag.toLowerCase().contains(query));
-    }).toList();
+  Future<List<Beat>> searchBeats(String query) async {
+    final response = await _supabase
+        .from(SupabaseConfig.beatsTable)
+        .select()
+        .or('title.ilike.%$query%,genre.ilike.%$query%')
+        .order('created_at', ascending: false);
+
+    return (response as List).map((json) => _beatFromJson(json)).toList();
   }
 
-  // Filter beats
-  List<Beat> filterBeats({
-    String? genre,
-    int? minBpm,
-    int? maxBpm,
-    double? minPrice,
-    double? maxPrice,
-    String? key,
-  }) {
-    var beats = _beatsBox.values;
-
-    if (genre != null) {
-      beats = beats.where((beat) => beat.genre == genre);
-    }
-    if (minBpm != null) {
-      beats = beats.where((beat) => beat.bpm >= minBpm);
-    }
-    if (maxBpm != null) {
-      beats = beats.where((beat) => beat.bpm <= maxBpm);
-    }
-    if (minPrice != null) {
-      beats = beats.where((beat) => beat.price >= minPrice);
-    }
-    if (maxPrice != null) {
-      beats = beats.where((beat) => beat.price <= maxPrice);
-    }
-    if (key != null) {
-      beats = beats.where((beat) => beat.musicalKey == key);
-    }
-
-    return beats.toList();
-  }
-
-  // Update beat
-  Future<void> updateBeat(Beat beat) async {
-    await _beatsBox.put(beat.id, beat);
-  }
-
-  // Delete beat
-  Future<void> deleteBeat(String id) async {
-    await _beatsBox.delete(id);
-  }
-
-  // Increment beat likes
-  Future<void> incrementBeatLikes(String beatId) async {
-    final beat = _beatsBox.get(beatId);
-    if (beat != null) {
-      beat.likes++;
-      await _beatsBox.put(beatId, beat);
-    }
-  }
-
-  // Increment beat downloads
-  Future<void> incrementBeatDownloads(String beatId) async {
-    final beat = _beatsBox.get(beatId);
-    if (beat != null) {
-      beat.downloads++;
-      await _beatsBox.put(beatId, beat);
-    }
+  // Helper: Convert JSON to Beat
+  Beat _beatFromJson(Map<String, dynamic> json) {
+    return Beat(
+      id: json['id'],
+      title: json['title'],
+      description: json['description'] ?? '',
+      producerId: json['producer_id'],
+      producerName: '', // Will be fetched separately if needed
+      genre: json['genre'],
+      bpm: json['bpm'],
+      musicalKey: json['musical_key'],
+      price: (json['price'] ?? 0).toDouble(),
+      previewPath: json['audio_url'] ?? '',
+      coverImagePath: json['cover_url'],
+      uploadDate: DateTime.parse(json['created_at']),
+      tags: List<String>.from(json['tags'] ?? []),
+      likes: json['likes'] ?? 0,
+      downloads: json['downloads'] ?? 0,
+      mp3Price: (json['mp3_price'] ?? 0).toDouble(),
+      wavPrice: (json['wav_price'] ?? 0).toDouble(),
+      stemsPrice: (json['stems_price'] ?? 0).toDouble(),
+      exclusivePrice: (json['exclusive_price'] ?? 0).toDouble(),
+    );
   }
 
   // ==================== USER OPERATIONS ====================
 
-  // Add user
-  Future<void> addUser(UserModel user) async {
-    await _usersBox.put(user.uid, user);
-  }
-
   // Get user by ID
-  UserModel? getUserById(String uid) {
-    return _usersBox.get(uid);
-  }
-
-  // Get user by email
-  UserModel? getUserByEmail(String email) {
+  Future<UserModel?> getUserById(String uid) async {
     try {
-      return _usersBox.values.firstWhere(
-        (user) => user.email.toLowerCase() == email.toLowerCase(),
-      );
+      final response = await _supabase
+          .from(SupabaseConfig.usersTable)
+          .select()
+          .eq('id', uid)
+          .single();
+
+      return _userFromJson(response);
     } catch (e) {
-      return null; // Return null if user not found
+      return null;
     }
   }
 
-  // Update user
-  Future<void> updateUser(UserModel user) async {
-    await _usersBox.put(user.uid, user);
+  // Get user by email
+  Future<UserModel?> getUserByEmail(String email) async {
+    try {
+      final response = await _supabase
+          .from(SupabaseConfig.usersTable)
+          .select()
+          .eq('email', email.toLowerCase())
+          .single();
+
+      return _userFromJson(response);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Helper: Convert JSON to UserModel
+  UserModel _userFromJson(Map<String, dynamic> json) {
+    return UserModel(
+      uid: json['id'],
+      email: json['email'],
+      username: json['username'],
+      displayName: json['display_name'],
+      passwordHash: '', // Not needed
+      role: json['role'] == 'producer' ? UserRole.producer : UserRole.buyer,
+      createdAt: DateTime.parse(json['created_at']),
+      bio: json['bio'],
+      totalEarnings: (json['total_earnings'] ?? 0).toDouble(),
+      pendingBalance: (json['pending_balance'] ?? 0).toDouble(),
+      totalSales: json['total_sales'] ?? 0,
+    );
   }
 
   // Update producer balance
   Future<void> updateProducerBalance(String producerId, double amount) async {
-    final user = _usersBox.get(producerId);
+    final user = await getUserById(producerId);
     if (user != null && user.isProducer()) {
-      user.pendingBalance += amount;
-      user.totalEarnings += amount;
-      user.totalSales++;
-      await _usersBox.put(producerId, user);
-    }
-  }
-
-  // Deduct from producer balance (for settlements)
-  Future<void> deductProducerBalance(String producerId, double amount) async {
-    final user = _usersBox.get(producerId);
-    if (user != null && user.isProducer()) {
-      user.pendingBalance -= amount;
-      await _usersBox.put(producerId, user);
+      await _supabase
+          .from(SupabaseConfig.usersTable)
+          .update({
+            'pending_balance': user.pendingBalance + amount,
+            'total_earnings': user.totalEarnings + amount,
+            'total_sales': user.totalSales + 1,
+          })
+          .eq('id', producerId);
     }
   }
 
@@ -243,89 +188,93 @@ class DatabaseService {
 
   // Add transaction
   Future<void> addTransaction(Transaction transaction) async {
-    await _transactionsBox.put(transaction.id, transaction);
-  }
+    final payload = {
+      'id': transaction.id,
+      'beat_id': transaction.beatId,
+      'buyer_id': transaction.buyerId,
+      'producer_id': transaction.producerId,
+      'license_type': transaction.licenseType.toString().split('.').last,
+      'amount': transaction.amount,
+      'status': transaction.status.toString().split('.').last,
+    };
 
-  // Get transactions by buyer
-  List<Transaction> getTransactionsByBuyer(String buyerId) {
-    return _transactionsBox.values.where((t) => t.buyerId == buyerId).toList();
+    await _supabase.from(SupabaseConfig.transactionsTable).insert(payload);
   }
 
   // Get transactions by producer
-  List<Transaction> getTransactionsByProducer(String producerId) {
-    return _transactionsBox.values
-        .where((t) => t.producerId == producerId)
+  Future<List<Transaction>> getTransactionsByProducer(String producerId) async {
+    final response = await _supabase
+        .from(SupabaseConfig.transactionsTable)
+        .select()
+        .eq('producer_id', producerId)
+        .order('created_at', ascending: false);
+
+    return (response as List)
+        .map((json) => _transactionFromJson(json))
         .toList();
   }
 
-  // Get all transactions
-  List<Transaction> getAllTransactions() {
-    return _transactionsBox.values.toList();
+  // Helper: Convert JSON to Transaction
+  Transaction _transactionFromJson(Map<String, dynamic> json) {
+    return Transaction(
+      id: json['id'],
+      beatId: json['beat_id'],
+      beatTitle: '', // Will need to fetch separately
+      buyerId: json['buyer_id'],
+      producerId: json['producer_id'],
+      licenseType: _parseLicenseType(json['license_type']),
+      amount: (json['amount'] ?? 0).toDouble(),
+      status: _parseTransactionStatus(json['status']),
+      timestamp: DateTime.parse(json['created_at']),
+    );
   }
 
-  // Update transaction
-  Future<void> updateTransaction(Transaction transaction) async {
-    await _transactionsBox.put(transaction.id, transaction);
+  LicenseType _parseLicenseType(String type) {
+    switch (type.toLowerCase()) {
+      case 'mp3':
+        return LicenseType.mp3;
+      case 'wav':
+        return LicenseType.wav;
+      case 'stems':
+        return LicenseType.stems;
+      case 'exclusive':
+        return LicenseType.exclusive;
+      default:
+        return LicenseType.mp3;
+    }
   }
 
-  // ==================== SETTLEMENT OPERATIONS ====================
-
-  // Add settlement
-  Future<void> addSettlement(Settlement settlement) async {
-    await _settlementsBox.put(settlement.id, settlement);
-  }
-
-  // Get settlements by producer
-  List<Settlement> getSettlementsByProducer(String producerId) {
-    return _settlementsBox.values
-        .where((s) => s.producerId == producerId)
-        .toList();
-  }
-
-  // Get all settlements
-  List<Settlement> getAllSettlements() {
-    return _settlementsBox.values.toList();
-  }
-
-  // Update settlement
-  Future<void> updateSettlement(Settlement settlement) async {
-    await _settlementsBox.put(settlement.id, settlement);
+  TransactionStatus _parseTransactionStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return TransactionStatus.pending;
+      case 'completed':
+        return TransactionStatus.completed;
+      case 'failed':
+        return TransactionStatus.failed;
+      default:
+        return TransactionStatus.completed;
+    }
   }
 
   // ==================== PURCHASED BEATS ====================
 
-  // Mark beat as purchased by user
-  Future<void> markBeatAsPurchased(String beatId) async {
-    await _purchasedBeatsBox.put(beatId, beatId);
-  }
+  // Check if beat is purchased (query transactions)
+  Future<bool> isBeatPurchased(String beatId, String userId) async {
+    final response = await _supabase
+        .from(SupabaseConfig.transactionsTable)
+        .select()
+        .eq('beat_id', beatId)
+        .eq('buyer_id', userId)
+        .limit(1);
 
-  // Check if beat is purchased
-  bool isBeatPurchased(String beatId) {
-    return _purchasedBeatsBox.containsKey(beatId);
-  }
-
-  // Get all purchased beat IDs
-  List<String> getPurchasedBeatIds() {
-    return _purchasedBeatsBox.values.toList();
+    return (response as List).isNotEmpty;
   }
 
   // ==================== UTILITY ====================
 
-  // Clear all data (for testing)
+  // Clear all data (for testing) - Not applicable for Supabase
   Future<void> clearAllData() async {
-    await _beatsBox.clear();
-    await _usersBox.clear();
-    await _transactionsBox.clear();
-    await _settlementsBox.clear();
-    await _purchasedBeatsBox.clear();
-  }
-
-  // Close all boxes
-  Future<void> close() async {
-    await _beatsBox.close();
-    await _usersBox.close();
-    await _transactionsBox.close();
-    await _settlementsBox.close();
-    await _purchasedBeatsBox.close();
+    print('Clear all data not supported in Supabase mode');
   }
 }
