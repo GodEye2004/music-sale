@@ -53,12 +53,46 @@ class DatabaseService {
       Hive.registerAdapter(SettlementAdapter());
     }
 
-    // Open boxes
-    _beatsBox = await Hive.openBox<Beat>(_beatsBoxName);
-    _usersBox = await Hive.openBox<UserModel>(_usersBoxName);
-    _transactionsBox = await Hive.openBox<Transaction>(_transactionsBoxName);
-    _settlementsBox = await Hive.openBox<Settlement>(_settlementsBoxName);
-    _purchasedBeatsBox = await Hive.openBox<String>(_purchasedBeatsBoxName);
+    // Open boxes with migration handling
+    try {
+      _beatsBox = await Hive.openBox<Beat>(_beatsBoxName);
+    } catch (e) {
+      print('Error opening beats box, clearing: $e');
+      await Hive.deleteBoxFromDisk(_beatsBoxName);
+      _beatsBox = await Hive.openBox<Beat>(_beatsBoxName);
+    }
+
+    try {
+      _usersBox = await Hive.openBox<UserModel>(_usersBoxName);
+    } catch (e) {
+      print('Error opening users box, clearing: $e');
+      await Hive.deleteBoxFromDisk(_usersBoxName);
+      _usersBox = await Hive.openBox<UserModel>(_usersBoxName);
+    }
+
+    try {
+      _transactionsBox = await Hive.openBox<Transaction>(_transactionsBoxName);
+    } catch (e) {
+      print('Error opening transactions box, clearing: $e');
+      await Hive.deleteBoxFromDisk(_transactionsBoxName);
+      _transactionsBox = await Hive.openBox<Transaction>(_transactionsBoxName);
+    }
+
+    try {
+      _settlementsBox = await Hive.openBox<Settlement>(_settlementsBoxName);
+    } catch (e) {
+      print('Error opening settlements box, clearing: $e');
+      await Hive.deleteBoxFromDisk(_settlementsBoxName);
+      _settlementsBox = await Hive.openBox<Settlement>(_settlementsBoxName);
+    }
+
+    try {
+      _purchasedBeatsBox = await Hive.openBox<String>(_purchasedBeatsBoxName);
+    } catch (e) {
+      print('Error opening purchased beats box, clearing: $e');
+      await Hive.deleteBoxFromDisk(_purchasedBeatsBoxName);
+      _purchasedBeatsBox = await Hive.openBox<String>(_purchasedBeatsBoxName);
+    }
   }
 
   // ==================== BEAT OPERATIONS ====================
@@ -171,10 +205,13 @@ class DatabaseService {
 
   // Get user by email
   UserModel? getUserByEmail(String email) {
-    return _usersBox.values.firstWhere(
-      (user) => user.email == email,
-      orElse: () => throw Exception('User not found'),
-    );
+    try {
+      return _usersBox.values.firstWhere(
+        (user) => user.email.toLowerCase() == email.toLowerCase(),
+      );
+    } catch (e) {
+      return null; // Return null if user not found
+    }
   }
 
   // Update user

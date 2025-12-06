@@ -230,37 +230,45 @@ class _HomeScreenState extends State<HomeScreen> {
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : _filteredBeats.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.music_off,
-                          size: 80,
-                          color: AppTheme.textHintColor,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'هیچ بیتی یافت نشد',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                      ],
-                    ),
-                  )
-                : GridView.builder(
-                    padding: const EdgeInsets.all(16),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: 0.75,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                        ),
-                    itemCount: _filteredBeats.length,
-                    itemBuilder: (context, index) {
-                      return BeatCard(beat: _filteredBeats[index]);
-                    },
+                : RefreshIndicator(
+                    onRefresh: _loadBeats,
+                    child: _filteredBeats.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.music_off,
+                                  size: 80,
+                                  color: AppTheme.textHintColor,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'هیچ بیتی یافت نشد',
+                                  style: Theme.of(context).textTheme.titleLarge,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'برای به‌روزرسانی کشیده و رها کنید',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ],
+                            ),
+                          )
+                        : GridView.builder(
+                            padding: const EdgeInsets.all(16),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  childAspectRatio: 0.75,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
+                                ),
+                            itemCount: _filteredBeats.length,
+                            itemBuilder: (context, index) {
+                              return BeatCard(beat: _filteredBeats[index]);
+                            },
+                          ),
                   ),
           ),
         ],

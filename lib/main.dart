@@ -9,12 +9,26 @@ import 'package:flutter_application_1/screens/buyer/home_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize services
-  await DatabaseService().init();
-  await StorageService().init();
-  await AuthService().init();
+  try {
+    // Initialize services
+    print('Initializing DatabaseService...');
+    await DatabaseService().init();
+    print('DatabaseService initialized');
 
-  runApp(const MyApp());
+    print('Initializing StorageService...');
+    await StorageService().init();
+    print('StorageService initialized');
+
+    print('Initializing AuthService...');
+    await AuthService().init();
+    print('AuthService initialized');
+
+    runApp(const MyApp());
+  } catch (e, stackTrace) {
+    print('Error during initialization: $e');
+    print('Stack trace: $stackTrace');
+    runApp(ErrorApp(error: e.toString()));
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -51,6 +65,43 @@ class MyApp extends StatelessWidget {
             return const LoginScreen();
           }
         },
+      ),
+    );
+  }
+}
+
+// Error App for initialization failures
+class ErrorApp extends StatelessWidget {
+  final String error;
+
+  const ErrorApp({super.key, required this.error});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 80, color: Colors.red),
+                const SizedBox(height: 24),
+                const Text(
+                  'خطا در راه‌اندازی',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  error,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 14),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

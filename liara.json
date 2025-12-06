@@ -1,5 +1,0 @@
-{
-    "platform": "docker",
-    "app": "music-sale",
-    "port": 80
-}
