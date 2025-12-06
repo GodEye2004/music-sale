@@ -1,0 +1,13 @@
+# Ignore everything except what we need for Docker build
+**/*
+
+# Allow only necessary files
+!Dockerfile
+!nginx.conf
+!build/
+!build/web/
+!build/web/**
+
+# Explicitly ignore other build folders
+build/*
+!build/web
