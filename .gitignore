@@ -1,0 +1,32 @@
+# Build files
+build/
+.dart_tool/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Flutter/Dart
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec.lock
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local data
+*.hive
+*.hive.lock
+
+# Test coverage
+coverage/
+
+# Generated files
+*.g.dart
+*.freezed.dart
+*.config.dart
