@@ -39,15 +39,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await AuthService().register(
+      final user = await AuthService().register(
         email: _emailController.text.trim(),
         username: _usernameController.text.trim(),
         password: _passwordController.text,
         role: _selectedRole,
       );
 
-      if (mounted) {
-        // Navigate to the appropriate home screen based on role
+      if (!mounted) return;
+
+      if (user != null) {
+        // Option 2: Auto-login successful (Email confirm OFF)
         if (_selectedRole == UserRole.producer) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const ProducerDashboardScreen()),
@@ -57,6 +59,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
             MaterialPageRoute(builder: (_) => const HomeScreen()),
           );
         }
+      } else {
+        // Option 3 behavior: Email confirmation required (Email confirm ON)
+        _showEmailConfirmDialog();
       }
     } catch (e) {
       print('Registration error: $e');
@@ -73,6 +78,44 @@ class _RegisterScreenState extends State<RegisterScreen> {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  void _showEmailConfirmDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('✉️ تأیید ایمیل'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'حساب شما ساخته شد!',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: AppTheme.successColor,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text('تنظیمات امنیتی سرور نیاز به تأیید ایمیل دارد.'),
+            const SizedBox(height: 8),
+            Text(
+              'لطفاً ایمیل ${_emailController.text} را چک کنید و روی لینک کلیک کنید تا وارد شوید.',
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Close dialog
+              Navigator.of(context).pop(); // Back to login
+            },
+            child: const Text('باشه، چک می‌کنم'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

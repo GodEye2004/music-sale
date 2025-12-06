@@ -86,7 +86,7 @@ class AuthService {
   }
 
   // Register new user
-  Future<UserModel> register({
+  Future<UserModel?> register({
     required String email,
     required String username,
     required String password,
@@ -114,19 +114,33 @@ class AuthService {
 
       await _supabase.from(SupabaseConfig.usersTable).insert(userPayload);
 
-      // Auto-login to create session (bypasses email confirmation)
-      print('🔐 Auto-logging in to create session...');
-      await _supabase.auth.signInWithPassword(email: email, password: password);
-
-      // Load the user
-      await _loadCurrentUser();
-
-      if (_currentUser == null) {
-        throw Exception('خطا در بارگذاری اطلاعات کاربر');
+      // Check if session was created immediately (Email Confirm OFF)
+      if (authResponse.session != null) {
+        print('🔐 Session created immediately. Logging in...');
+        await _loadCurrentUser();
+        return _currentUser;
       }
 
-      print('✅ Registration complete! User: ${_currentUser!.email}');
-      return _currentUser!;
+      // If no session, try explicit sign in (Double check)
+      try {
+        print('🔐 Trying explicit login...');
+        final loginResponse = await _supabase.auth.signInWithPassword(
+          email: email,
+          password: password,
+        );
+
+        if (loginResponse.session != null) {
+          await _loadCurrentUser();
+          return _currentUser;
+        }
+      } catch (e) {
+        // If login fails with invalid credentials here, it DEFINITELY means
+        // email confirmation is required and pending.
+        print('⚠️ Login failed (likely waiting for email confirm): $e');
+      }
+
+      print('✉️ Email confirmation required.');
+      return null; // Signals controller that user needs to confirm email
     } catch (e) {
       print('Registration error: $e');
       throw Exception('ثبت نام ناموفق: ${e.toString()}');
