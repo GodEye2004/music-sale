@@ -114,21 +114,19 @@ class AuthService {
 
       await _supabase.from(SupabaseConfig.usersTable).insert(userPayload);
 
+      // Auto-login to create session (bypasses email confirmation)
+      print('🔐 Auto-logging in to create session...');
+      await _supabase.auth.signInWithPassword(email: email, password: password);
+
       // Load the user
       await _loadCurrentUser();
 
-      // Note: _currentUser will be null until email is confirmed
-      // That's expected behavior
+      if (_currentUser == null) {
+        throw Exception('خطا در بارگذاری اطلاعات کاربر');
+      }
 
-      return UserModel(
-        uid: authResponse.user!.id,
-        email: email,
-        username: username,
-        displayName: username,
-        passwordHash: '',
-        role: role,
-        createdAt: DateTime.now(),
-      );
+      print('✅ Registration complete! User: ${_currentUser!.email}');
+      return _currentUser!;
     } catch (e) {
       print('Registration error: $e');
       throw Exception('ثبت نام ناموفق: ${e.toString()}');

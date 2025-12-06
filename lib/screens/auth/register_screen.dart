@@ -4,6 +4,7 @@ import 'package:flutter_application_1/config/constants.dart';
 import 'package:flutter_application_1/models/user_model.dart';
 import 'package:flutter_application_1/services/auth_service.dart';
 import 'package:flutter_application_1/screens/buyer/home_screen.dart';
+import 'package:flutter_application_1/screens/producer/dashboard_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -46,42 +47,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       if (mounted) {
-        // Show email confirmation dialog
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => AlertDialog(
-            title: const Text('✉️ تأیید ایمیل'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'یک ایمیل تأیید برای شما ارسال شد.',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'لطفاً ایمیل ${_emailController.text} را چک کنید و روی لینک تأیید کلیک کنید.',
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'بعد از تأیید، می‌تونید وارد بشید.',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(); // Close dialog
-                  Navigator.of(context).pop(); // Go back to login
-                },
-                child: const Text('متوجه شدم'),
-              ),
-            ],
-          ),
-        );
+        // Navigate to the appropriate home screen based on role
+        if (_selectedRole == UserRole.producer) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const ProducerDashboardScreen()),
+          );
+        } else {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const HomeScreen()),
+          );
+        }
       }
     } catch (e) {
       print('Registration error: $e');
