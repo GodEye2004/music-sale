@@ -46,13 +46,21 @@ class AuthService {
   Future<void> _loadCurrentUser() async {
     try {
       final userId = _supabase.auth.currentUser?.id;
-      if (userId == null) return;
+      print('🔍 Loading user with ID: $userId');
 
+      if (userId == null) {
+        print('❌ No user ID found');
+        return;
+      }
+
+      print('📡 Querying users table...');
       final response = await _supabase
           .from(SupabaseConfig.usersTable)
           .select()
           .eq('id', userId)
           .single();
+
+      print('✅ User data received: $response');
 
       _currentUser = UserModel(
         uid: response['id'],
@@ -69,8 +77,11 @@ class AuthService {
         pendingBalance: (response['pending_balance'] ?? 0).toDouble(),
         totalSales: response['total_sales'] ?? 0,
       );
-    } catch (e) {
-      print('Error loading current user: $e');
+
+      print('✅ User loaded successfully: ${_currentUser!.email}');
+    } catch (e, stackTrace) {
+      print('❌ Error loading current user: $e');
+      print('Stack trace: $stackTrace');
     }
   }
 
