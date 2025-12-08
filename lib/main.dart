@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/config/supabase_config.dart';
+import 'package:flutter_application_1/models/user_model.dart';
+import 'package:flutter_application_1/screens/auth/login_screen.dart';
+import 'package:flutter_application_1/screens/buyer/pages/home_screen.dart';
+import 'package:flutter_application_1/screens/producer/dashboard_screen.dart';
+import 'package:flutter_application_1/startup_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_application_1/config/theme.dart';
 import 'package:flutter_application_1/services/auth_service.dart';
 import 'package:flutter_application_1/services/storage_service.dart';
-import 'package:flutter_application_1/screens/auth/login_screen.dart';
-import 'package:flutter_application_1/screens/buyer/pages/home_screen.dart';
-
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Supabase
   try {
-    print('Initializing Supabase...');
-
     // Check if URL/Key are present
     if (SupabaseConfig.supabaseUrl.isEmpty ||
         SupabaseConfig.supabaseAnonKey.isEmpty) {
@@ -28,21 +28,15 @@ void main() async {
       anonKey: SupabaseConfig.supabaseAnonKey,
       debug: true, // Enable debug logging
     );
-    print('Supabase initialized successfully');
 
     // Initialize Services
-    print('Initializing Services...');
+
     final storageService = StorageService();
     await storageService.init();
-    print('StorageService initialized');
 
-    print('Initializing AuthService...');
     final authService = AuthService();
     // No need to await init() as it's not async anymore or handles internals
-    print('AuthService initialized');
   } catch (e, stackTrace) {
-    print('Error during initialization: $e');
-    print(stackTrace);
     runApp(ErrorApp(error: e.toString()));
     return;
   }
@@ -68,8 +62,9 @@ class MyApp extends StatelessWidget {
         // GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: const [Locale('fa', 'IR'), Locale('en', 'US')],
-      home: FutureBuilder<bool>(
-        future: AuthService().isLoggedIn(),
+      home: FutureBuilder<void>(
+        future: AuthService()
+            .init(), // این باید session رو بازیابی کنه و currentUser ست بشه
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Scaffold(
@@ -77,11 +72,14 @@ class MyApp extends StatelessWidget {
             );
           }
 
-          final isLoggedIn = snapshot.data ?? false;
-          if (isLoggedIn) {
-            return const HomeScreen();
-          } else {
+          final user = AuthService().currentUser;
+
+          if (user == null) {
             return const LoginScreen();
+          } else if (user.role == UserRole.producer) {
+            return const ProducerDashboardScreen();
+          } else {
+            return const HomeScreen();
           }
         },
       ),

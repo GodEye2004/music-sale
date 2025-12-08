@@ -6,6 +6,8 @@ import 'package:flutter_application_1/services/auth_service.dart';
 import 'package:flutter_application_1/screens/buyer/pages/home_screen.dart';
 import 'package:flutter_application_1/screens/producer/dashboard_screen.dart';
 import 'package:flutter_application_1/screens/auth/widget/role_card.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -50,7 +52,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
 
       if (user != null) {
-        // Option 2: Auto-login successful (Email confirm OFF)
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('user_role', _selectedRole.name);
+
+        // also update Supabase metadata
+        await Supabase.instance.client.auth.updateUser(
+          UserAttributes(data: {'role': _selectedRole.name}),
+        );
+
         if (_selectedRole == UserRole.producer) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const ProducerDashboardScreen()),
@@ -61,8 +70,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           );
         }
       } else {
-        // Option 3 behavior: Email confirmation required (Email confirm ON)
-        print("maybe you shloud confirm email.");
+        print("maybe you should confirm your email.");
       }
     } catch (e) {
       print('Registration error: $e');
@@ -80,8 +88,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     }
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -285,4 +291,3 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 }
-

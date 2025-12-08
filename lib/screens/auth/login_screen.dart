@@ -7,6 +7,7 @@ import 'package:flutter_application_1/services/auth_service.dart';
 import 'package:flutter_application_1/screens/auth/register_screen.dart';
 import 'package:flutter_application_1/screens/buyer/pages/home_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -35,28 +36,16 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await AuthService().login(
+      // 1️⃣ Login and get the user
+      final user = await AuthService().login(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
 
-      // Read saved role
-      final prefs = await SharedPreferences.getInstance();
-      final roleString = prefs.getString('user_role');
-
-      // Convert string back to enum
-      UserRole? role;
-      if (roleString != null) {
-        role = UserRole.values.firstWhere((r) => r.name == roleString);
-      }
-
-      // Fallback just in case something is broken
-      role ??= UserRole.buyer;
-
       if (!mounted) return;
 
-      // Route based on role
-      if (role == UserRole.producer) {
+      // 2️⃣ Check the user role and navigate accordingly
+      if (user.role == UserRole.producer) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const ProducerDashboardScreen()),
         );
@@ -66,18 +55,17 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } catch (e) {
+      // 3️⃣ Handle login errors
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString()),
+            content: Text('خطا در ورود: ${e.toString()}'),
             backgroundColor: AppTheme.errorColor,
           ),
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 

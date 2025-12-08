@@ -6,6 +6,7 @@ import 'package:flutter_application_1/services/auth_service.dart';
 import 'package:flutter_application_1/services/database_service.dart';
 import 'package:flutter_application_1/screens/producer/upload_beat_screen.dart';
 import 'package:flutter_application_1/screens/producer/my_beats_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProducerDashboardScreen extends StatefulWidget {
   const ProducerDashboardScreen({super.key});
@@ -20,22 +21,52 @@ class _ProducerDashboardScreenState extends State<ProducerDashboardScreen> {
   final AuthService _auth = AuthService();
 
   UserModel? _currentUser;
-
+  UserRole? _useRole;
+  bool _isLoading = true;
   @override
   void initState() {
     super.initState();
-    _loadUserData();
+    _initData();
   }
 
-  void _loadUserData() {
+  // Future<void> _initData() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   final roleString = prefs.getString('user_role');
+  //   final role = roleString != null
+  //       ? UserRole.values.firstWhere((r) => r.name == roleString)
+  //       : UserRole.buyer;
+
+  //   final user = await _auth.fetchCurrentUser();
+
+  //   setState(() {
+  //     _useRole = role;
+  //     _currentUser = user;
+  //     _isLoading = false;
+  //   });
+  // }
+
+  Future<void> _initData() async {
+    final user = AuthService().currentUser;
     setState(() {
-      _currentUser = _auth.currentUser;
+      _currentUser = user;
+      _isLoading = false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_currentUser == null || !_currentUser!.isProducer()) {
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (_currentUser == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('داشبورد')),
+        body: const Center(child: Text('خطا در بارگذاری کاربر')),
+      );
+    }
+
+    if (_currentUser!.role != UserRole.producer) {
       return Scaffold(
         appBar: AppBar(title: const Text('داشبورد')),
         body: const Center(child: Text('شما دسترسی به این بخش ندارید')),

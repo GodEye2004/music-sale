@@ -161,6 +161,12 @@ class AuthService {
     }
   }
 
+  Future<UserModel?> fetchCurrentUser() async {
+    if (_currentUser != null) return _currentUser;
+    await _loadCurrentUser();
+    return _currentUser;
+  }
+
   Future<void> logout() async {
     await _supabase.auth.signOut();
     _currentUser = null;
