@@ -3,8 +3,9 @@ import 'package:flutter_application_1/config/theme.dart';
 import 'package:flutter_application_1/config/constants.dart';
 import 'package:flutter_application_1/models/user_model.dart';
 import 'package:flutter_application_1/services/auth_service.dart';
-import 'package:flutter_application_1/screens/buyer/home_screen.dart';
+import 'package:flutter_application_1/screens/buyer/pages/home_screen.dart';
 import 'package:flutter_application_1/screens/producer/dashboard_screen.dart';
+import 'package:flutter_application_1/screens/auth/widget/role_card.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -61,7 +62,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         }
       } else {
         // Option 3 behavior: Email confirmation required (Email confirm ON)
-        _showEmailConfirmDialog();
+        print("maybe you shloud confirm email.");
       }
     } catch (e) {
       print('Registration error: $e');
@@ -80,43 +81,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  void _showEmailConfirmDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text('✉️ تأیید ایمیل'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'حساب شما ساخته شد!',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: AppTheme.successColor,
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Text('تنظیمات امنیتی سرور نیاز به تأیید ایمیل دارد.'),
-            const SizedBox(height: 8),
-            Text(
-              'لطفاً ایمیل ${_emailController.text} را چک کنید و روی لینک کلیک کنید تا وارد شوید.',
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(); // Close dialog
-              Navigator.of(context).pop(); // Back to login
-            },
-            child: const Text('باشه، چک می‌کنم'),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -260,7 +225,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   Row(
                     children: [
                       Expanded(
-                        child: _RoleCard(
+                        child: RoleCard(
                           title: 'خریدار',
                           subtitle: 'خرید و دانلود بیت',
                           icon: Icons.shopping_bag_outlined,
@@ -274,7 +239,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: _RoleCard(
+                        child: RoleCard(
                           title: 'پرودیوسر',
                           subtitle: 'فروش بیت',
                           icon: Icons.music_note_outlined,
@@ -321,62 +286,3 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 }
 
-class _RoleCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _RoleCard({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primaryColor : AppTheme.cardColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? AppTheme.primaryColor : Colors.transparent,
-            width: 2,
-          ),
-        ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              size: 40,
-              color: isSelected ? Colors.white : AppTheme.textSecondaryColor,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: isSelected ? Colors.white : AppTheme.textPrimaryColor,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: isSelected
-                    ? Colors.white.withOpacity(0.8)
-                    : AppTheme.textSecondaryColor,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

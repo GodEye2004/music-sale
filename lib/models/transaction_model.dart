@@ -1,60 +1,18 @@
-import 'package:hive/hive.dart';
+enum LicenseType { mp3, wav, stems, exclusive }
 
-part 'transaction_model.g.dart';
+enum TransactionStatus { pending, completed, failed }
 
-@HiveType(typeId: 3)
-enum LicenseType {
-  @HiveField(0)
-  mp3,
-  @HiveField(1)
-  wav,
-  @HiveField(2)
-  stems,
-  @HiveField(3)
-  exclusive,
-}
-
-@HiveType(typeId: 4)
-enum TransactionStatus {
-  @HiveField(0)
-  pending,
-  @HiveField(1)
-  completed,
-  @HiveField(2)
-  failed,
-}
-
-@HiveType(typeId: 5)
-class Transaction extends HiveObject {
-  @HiveField(0)
+class Transaction {
   final String id;
-
-  @HiveField(1)
   final String beatId;
-
-  @HiveField(2)
   final String beatTitle;
-
-  @HiveField(3)
   final String buyerId;
-
-  @HiveField(4)
   final String producerId;
-
-  @HiveField(5)
   final LicenseType licenseType;
-
-  @HiveField(6)
   final double amount;
-
-  @HiveField(7)
   final TransactionStatus status;
-
-  @HiveField(8)
-  final DateTime timestamp;
-
-  @HiveField(9)
-  final String? transactionReference;
+  final DateTime timestamp; // Originally createdAt
+  final String transactionReference;
 
   Transaction({
     required this.id,
@@ -66,34 +24,67 @@ class Transaction extends HiveObject {
     required this.amount,
     required this.status,
     required this.timestamp,
-    this.transactionReference,
+    required this.transactionReference,
   });
 
-  String getFormattedAmount() {
-    return '${amount.toStringAsFixed(0)} تومان';
+  // Factory constructor for Supabase
+  factory Transaction.fromJson(Map<String, dynamic> json) {
+    return Transaction(
+      id: json['id'],
+      beatId: json['beat_id'],
+      // beatTitle must be joined or fetched separately, usually not in transactions table directly
+      // Assuming we join beats table or store title for history
+      beatTitle: json['beats'] != null
+          ? json['beats']['title']
+          : 'Unknown Beat',
+      buyerId: json['buyer_id'],
+      producerId: json['producer_id'],
+      licenseType: _parseLicenseType(json['license_type']),
+      amount: (json['amount'] as num).toDouble(),
+      status: _parseStatus(json['status']),
+      timestamp: DateTime.parse(json['created_at']),
+      transactionReference: json['id'], // using ID as reference for now
+    );
   }
 
   String getLicenseTypeName() {
     switch (licenseType) {
       case LicenseType.mp3:
-        return 'MP3';
+        return 'MP3 Lease';
       case LicenseType.wav:
-        return 'WAV';
+        return 'WAV Lease';
       case LicenseType.stems:
-        return 'Stems';
+        return 'Trackout / Stems';
       case LicenseType.exclusive:
-        return 'انحصاری';
+        return 'Exclusive Rights';
     }
   }
 
-  String getStatusName() {
+  String getFormattedAmount() {
+    return '${amount.toStringAsFixed(0)} تومان';
+  }
+
+  static LicenseType _parseLicenseType(String type) {
+    switch (type) {
+      case 'wav':
+        return LicenseType.wav;
+      case 'stems':
+        return LicenseType.stems;
+      case 'exclusive':
+        return LicenseType.exclusive;
+      default:
+        return LicenseType.mp3;
+    }
+  }
+
+  static TransactionStatus _parseStatus(String status) {
     switch (status) {
-      case TransactionStatus.pending:
-        return 'در انتظار';
-      case TransactionStatus.completed:
-        return 'موفق';
-      case TransactionStatus.failed:
-        return 'ناموفق';
+      case 'completed':
+        return TransactionStatus.completed;
+      case 'failed':
+        return TransactionStatus.failed;
+      default:
+        return TransactionStatus.pending;
     }
   }
 }

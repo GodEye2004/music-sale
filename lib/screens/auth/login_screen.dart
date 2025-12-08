@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/config/theme.dart';
 import 'package:flutter_application_1/config/constants.dart';
+import 'package:flutter_application_1/models/user_model.dart';
+import 'package:flutter_application_1/screens/producer/dashboard_screen.dart';
 import 'package:flutter_application_1/services/auth_service.dart';
 import 'package:flutter_application_1/screens/auth/register_screen.dart';
-import 'package:flutter_application_1/screens/buyer/home_screen.dart';
+import 'package:flutter_application_1/screens/buyer/pages/home_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -37,7 +40,27 @@ class _LoginScreenState extends State<LoginScreen> {
         password: _passwordController.text,
       );
 
-      if (mounted) {
+      // Read saved role
+      final prefs = await SharedPreferences.getInstance();
+      final roleString = prefs.getString('user_role');
+
+      // Convert string back to enum
+      UserRole? role;
+      if (roleString != null) {
+        role = UserRole.values.firstWhere((r) => r.name == roleString);
+      }
+
+      // Fallback just in case something is broken
+      role ??= UserRole.buyer;
+
+      if (!mounted) return;
+
+      // Route based on role
+      if (role == UserRole.producer) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const ProducerDashboardScreen()),
+        );
+      } else {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const HomeScreen()),
         );

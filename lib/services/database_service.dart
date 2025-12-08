@@ -225,7 +225,7 @@ class DatabaseService {
       licenseType: _parseLicenseType(json['license_type']),
       amount: (json['amount'] ?? 0).toDouble(),
       status: _parseTransactionStatus(json['status']),
-      timestamp: DateTime.parse(json['created_at']),
+      timestamp: DateTime.parse(json['created_at']), transactionReference: '',
     );
   }
 

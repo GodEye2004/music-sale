@@ -70,7 +70,7 @@ class PaymentService {
       licenseType: licenseType,
       amount: amount,
       status: TransactionStatus.failed,
-      timestamp: DateTime.now(),
+      timestamp: DateTime.now(), transactionReference: '',
     );
 
     await _db.addTransaction(transaction);

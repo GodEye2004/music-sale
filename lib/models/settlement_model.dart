@@ -1,47 +1,15 @@
-import 'package:hive/hive.dart';
+enum SettlementStatus { pending, processing, completed, rejected }
 
-part 'settlement_model.g.dart';
-
-@HiveType(typeId: 6)
-enum SettlementStatus {
-  @HiveField(0)
-  pending,
-  @HiveField(1)
-  processing,
-  @HiveField(2)
-  completed,
-  @HiveField(3)
-  rejected,
-}
-
-@HiveType(typeId: 7)
-class Settlement extends HiveObject {
-  @HiveField(0)
-  late String id;
-
-  @HiveField(1)
-  late String producerId;
-
-  @HiveField(2)
-  late String producerName;
-
-  @HiveField(3)
-  late double amount;
-
-  @HiveField(4)
-  late SettlementStatus status;
-
-  @HiveField(5)
-  late DateTime requestDate;
-
-  @HiveField(6)
-  DateTime? completedDate;
-
-  @HiveField(7)
-  late String bankAccountInfo;
-
-  @HiveField(8)
-  String? notes;
+class Settlement {
+  final String id;
+  final String producerId;
+  final String producerName;
+  final double amount;
+  final SettlementStatus status;
+  final DateTime requestDate;
+  final DateTime? completedDate;
+  final String bankAccountInfo;
+  final String? notes;
 
   Settlement({
     required this.id,
@@ -72,7 +40,9 @@ class Settlement extends HiveObject {
     }
   }
 
-  String getStatusColor() {
+  // Changed to return int/Color compatible value if needed, or kept as logic helper
+  // For now returning String to match previous logic, but ideally should return Color object
+  String getStatusColorName() {
     switch (status) {
       case SettlementStatus.pending:
         return 'orange';

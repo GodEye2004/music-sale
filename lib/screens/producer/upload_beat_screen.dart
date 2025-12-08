@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter_application_1/config/theme.dart';
 import 'package:flutter_application_1/config/constants.dart';
@@ -176,19 +177,36 @@ class _UploadBeatScreenState extends State<UploadBeatScreen> {
       final currentUser = _auth.currentUser!;
       final beatId = _uuid.v4();
 
-      // Save audio file
-      final audioPath = await _storage.saveBeatAudioFile(_audioFile!, beatId);
+      final bucket = Supabase.instance.client.storage.from('beats');
 
-      // Save cover image if selected
+      // Upload audio file
+      final audioFileName = '${beatId}.mp3';
+      final uploadedAudioPath = await bucket.upload(
+        audioFileName,
+        File(_audioFile!.path),
+      );
+      if (uploadedAudioPath == null || uploadedAudioPath.isEmpty) {
+        throw Exception('Upload audio failed');
+      }
+
+      // Upload cover image if selected
       String? coverPath;
       if (_coverImage != null) {
-        coverPath = await _storage.saveCoverImage(_coverImage!, beatId);
+        final coverFileName = '${beatId}_cover.png';
+        final uploadedCoverPath = await bucket.upload(
+          coverFileName,
+          File(_coverImage!.path),
+        );
+        if (uploadedCoverPath == null || uploadedCoverPath.isEmpty) {
+          throw Exception('Upload cover failed');
+        }
+        coverPath = uploadedCoverPath;
       }
 
       // Get default price (MP3)
       final defaultPrice = double.tryParse(_mp3PriceController.text) ?? 0;
 
-      // Create beat
+      // Create beat object
       final beat = Beat(
         id: beatId,
         title: _titleController.text.trim(),
@@ -199,8 +217,8 @@ class _UploadBeatScreenState extends State<UploadBeatScreen> {
         bpm: int.parse(_bpmController.text),
         musicalKey: _selectedKey!,
         price: defaultPrice,
-        previewPath: audioPath, // For now, use same file for preview
-        fullPath: audioPath,
+        previewPath: uploadedAudioPath,
+        fullPath: uploadedAudioPath,
         coverImagePath: coverPath,
         uploadDate: DateTime.now(),
         tags: _selectedTags,
@@ -209,6 +227,7 @@ class _UploadBeatScreenState extends State<UploadBeatScreen> {
         stemsPrice: double.tryParse(_stemsPriceController.text),
       );
 
+      // Save beat in DB
       await _db.addBeat(beat);
 
       if (mounted) {
@@ -230,9 +249,7 @@ class _UploadBeatScreenState extends State<UploadBeatScreen> {
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _isUploading = false);
-      }
+      if (mounted) setState(() => _isUploading = false);
     }
   }
 

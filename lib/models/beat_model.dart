@@ -1,71 +1,26 @@
-import 'package:hive/hive.dart';
-
-part 'beat_model.g.dart';
-
-@HiveType(typeId: 0)
-class Beat extends HiveObject {
-  @HiveField(0)
-  late String id;
-
-  @HiveField(1)
-  late String title;
-
-  @HiveField(2)
-  late String description;
-
-  @HiveField(3)
-  late String producerId;
-
-  @HiveField(4)
-  late String producerName;
-
-  @HiveField(5)
-  late String genre;
-
-  @HiveField(6)
-  late int bpm;
-
-  @HiveField(7)
-  late String musicalKey;
-
-  @HiveField(8)
-  late double price;
-
-  @HiveField(9)
-  late String previewPath; // Local file path for preview
-
-  @HiveField(10)
-  String? fullPath; // Local file path for full version
-
-  @HiveField(11)
-  String? coverImagePath;
-
-  @HiveField(12)
-  late DateTime uploadDate;
-
-  @HiveField(13)
-  int downloads;
-
-  @HiveField(14)
-  int likes;
-
-  @HiveField(15)
-  List<String> tags;
-
-  @HiveField(16)
-  bool isExclusive;
-
-  @HiveField(17)
-  double? mp3Price;
-
-  @HiveField(18)
-  double? wavPrice;
-
-  @HiveField(19)
-  double? stemsPrice;
-
-  @HiveField(20)
-  double? exclusivePrice;
+class Beat {
+  final String id;
+  final String title;
+  final String description;
+  final String producerId;
+  final String producerName;
+  final String genre;
+  final String? previewUrl;
+  final int bpm;
+  final String musicalKey;
+  final double price;
+  final String previewPath; // URL or Local Path of audio
+  final String? fullPath; // URL or Local Path of full audio
+  final String? coverImagePath; // URL or Local Path of cover
+  final DateTime uploadDate;
+  final int downloads;
+  final int likes;
+  final List<String> tags;
+  final bool isExclusive;
+  final double? mp3Price;
+  final double? wavPrice;
+  final double? stemsPrice;
+  final double? exclusivePrice;
 
   Beat({
     required this.id,
@@ -78,6 +33,7 @@ class Beat extends HiveObject {
     required this.musicalKey,
     required this.price,
     required this.previewPath,
+    this.previewUrl,
     this.fullPath,
     this.coverImagePath,
     required this.uploadDate,
@@ -91,14 +47,58 @@ class Beat extends HiveObject {
     this.exclusivePrice,
   });
 
+  // Factory constructor to create a Beat from JSON (Supabase)
+  factory Beat.fromJson(Map<String, dynamic> json) {
+    return Beat(
+      id: json['id'],
+      title: json['title'],
+      description: json['description'] ?? '',
+      producerId: json['producer_id'],
+      producerName: '', // Will be populated separately or joined
+      genre: json['genre'],
+      bpm: json['bpm'],
+      musicalKey: json['musical_key'],
+      price: (json['price'] ?? 0).toDouble(),
+      previewPath: json['audio_url'] ?? '',
+      fullPath: json['audio_url'],
+      coverImagePath: json['cover_url'],
+      uploadDate: DateTime.parse(json['created_at']),
+      downloads: json['downloads'] ?? 0,
+      likes: json['likes'] ?? 0,
+      tags: List<String>.from(json['tags'] ?? []),
+      mp3Price: (json['mp3_price'])?.toDouble(),
+      wavPrice: (json['wav_price'])?.toDouble(),
+      stemsPrice: (json['stems_price'])?.toDouble(),
+      exclusivePrice: (json['exclusive_price'])?.toDouble(),
+    );
+  }
+
+  // Convert Beat to JSON for Supabase insert
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'producer_id': producerId,
+      'genre': genre,
+      'bpm': bpm,
+      'musical_key': musicalKey,
+      'price': price,
+      'audio_url': previewPath,
+      'cover_url': coverImagePath,
+      'tags': tags,
+      'created_at': uploadDate.toIso8601String(),
+      'likes': likes,
+      'downloads': downloads,
+      'mp3_price': mp3Price,
+      'wav_price': wavPrice,
+      'stems_price': stemsPrice,
+      'exclusive_price': exclusivePrice,
+    };
+  }
+
   // Helper method to get formatted price
   String getFormattedPrice() {
     return '${price.toStringAsFixed(0)} تومان';
-  }
-
-  // Helper to check if user has liked
-  bool isLikedBy(String userId) {
-    // This will be implemented with a separate likes collection
-    return false;
   }
 }

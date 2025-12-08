@@ -1,44 +1,53 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/config/theme.dart';
 import 'package:flutter_application_1/config/supabase_config.dart';
-import 'package:flutter_application_1/services/database_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_application_1/config/theme.dart';
 import 'package:flutter_application_1/services/auth_service.dart';
 import 'package:flutter_application_1/services/storage_service.dart';
 import 'package:flutter_application_1/screens/auth/login_screen.dart';
-import 'package:flutter_application_1/screens/buyer/home_screen.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_application_1/screens/buyer/pages/home_screen.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Initialize Supabase
   try {
-    // Initialize Supabase
     print('Initializing Supabase...');
+
+    // Check if URL/Key are present
+    if (SupabaseConfig.supabaseUrl.isEmpty ||
+        SupabaseConfig.supabaseAnonKey.isEmpty) {
+      throw Exception(
+        'Supabase URL or Key is empty. Check lib/config/supabase_config.dart',
+      );
+    }
+
     await Supabase.initialize(
       url: SupabaseConfig.supabaseUrl,
       anonKey: SupabaseConfig.supabaseAnonKey,
+      debug: true, // Enable debug logging
     );
-    print('Supabase initialized');
+    print('Supabase initialized successfully');
 
-    // Initialize services
-    print('Initializing DatabaseService...');
-    await DatabaseService().init();
-    print('DatabaseService initialized');
-
-    print('Initializing StorageService...');
-    await StorageService().init();
+    // Initialize Services
+    print('Initializing Services...');
+    final storageService = StorageService();
+    await storageService.init();
     print('StorageService initialized');
 
     print('Initializing AuthService...');
-    await AuthService().init();
+    final authService = AuthService();
+    // No need to await init() as it's not async anymore or handles internals
     print('AuthService initialized');
-
-    runApp(const MyApp());
   } catch (e, stackTrace) {
     print('Error during initialization: $e');
-    print('Stack trace: $stackTrace');
+    print(stackTrace);
     runApp(ErrorApp(error: e.toString()));
+    return;
   }
+
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {

@@ -18,6 +18,12 @@ class AppTheme {
   static const Color warningColor = Color(0xFFFFB800);
   static const Color errorColor = Color(0xFFFF5252);
 
+  static const TextStyle headlineStyle = TextStyle(
+    fontSize: 24,
+    fontWeight: FontWeight.bold,
+    color: textPrimaryColor,
+  );
+
   // Gradients
   static const LinearGradient primaryGradient = LinearGradient(
     colors: [primaryColor, secondaryColor],

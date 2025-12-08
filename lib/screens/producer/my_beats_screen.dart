@@ -5,6 +5,7 @@ import 'package:flutter_application_1/services/auth_service.dart';
 import 'package:flutter_application_1/services/database_service.dart';
 import 'package:flutter_application_1/screens/producer/upload_beat_screen.dart';
 import 'package:flutter_application_1/widgets/beat_card.dart';
+import 'package:flutter_application_1/screens/buyer/pages/beat_detail_screen.dart';
 
 class MyBeatsScreen extends StatefulWidget {
   const MyBeatsScreen({super.key});
@@ -104,7 +105,17 @@ class _MyBeatsScreenState extends State<MyBeatsScreen> {
                 ),
                 itemCount: _myBeats.length,
                 itemBuilder: (context, index) {
-                  return BeatCard(beat: _myBeats[index]);
+                  return BeatCard(
+                    beat: _myBeats[index],
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              BeatDetailScreen(beat: _myBeats[index]),
+                        ),
+                      );
+                    },
+                  );
                 },
               ),
             ),

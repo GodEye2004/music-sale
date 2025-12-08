@@ -1,21 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/config/theme.dart';
 import 'package:flutter_application_1/models/beat_model.dart';
-import 'package:flutter_application_1/screens/buyer/beat_detail_screen.dart';
+import 'package:flutter_application_1/screens/buyer/pages/beat_detail_screen.dart';
 
 class BeatCard extends StatelessWidget {
   final Beat beat;
+  final VoidCallback? onTap;
 
-  const BeatCard({super.key, required this.beat});
+  const BeatCard({super.key, required this.beat, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => BeatDetailScreen(beat: beat)));
-      },
+      onTap:
+          onTap ??
+          () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => BeatDetailScreen(beat: beat)),
+            );
+          },
       child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Column(
