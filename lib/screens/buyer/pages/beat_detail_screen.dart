@@ -8,6 +8,7 @@ import 'package:flutter_application_1/screens/buyer/widget/beat_detailes/beat_in
 import 'package:flutter_application_1/screens/buyer/widget/beat_detailes/license_selector.dart';
 import 'package:flutter_application_1/services/auth_service.dart';
 import 'package:flutter_application_1/services/database_service.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class BeatDetailScreen extends StatefulWidget {
   final Beat beat;
@@ -119,6 +120,7 @@ class _BeatDetailScreenState extends State<BeatDetailScreen> {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
           children: [
             const Icon(Icons.verified, color: AppTheme.primaryColor),
             const SizedBox(width: 12),
@@ -126,9 +128,9 @@ class _BeatDetailScreenState extends State<BeatDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'بیت شما',
-                    style: TextStyle(
+                    style: GoogleFonts.vazirmatn(
                       color: AppTheme.primaryColor,
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
@@ -137,7 +139,7 @@ class _BeatDetailScreenState extends State<BeatDetailScreen> {
                   const SizedBox(height: 4),
                   Text(
                     'این بیت متعلق به شماست',
-                    style: TextStyle(
+                    style: GoogleFonts.vazirmatn(
                       color: AppTheme.textSecondaryColor,
                       fontSize: 12,
                     ),
@@ -154,19 +156,24 @@ class _BeatDetailScreenState extends State<BeatDetailScreen> {
   Widget _buildPurchasedCard() {
     return Card(
       color: AppTheme.successColor.withOpacity(0.2),
-      child: const Padding(
-        padding: EdgeInsets.all(16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            Icon(Icons.check_circle, color: AppTheme.successColor),
-            SizedBox(width: 12),
-            Text(
-              'شما این بیت را خریداری کرده‌اید',
-              style: TextStyle(
-                color: AppTheme.successColor,
-                fontWeight: FontWeight.bold,
+            Flexible(
+              child: Text(
+                'شما این بیت را خریداری کرده‌اید',
+                textAlign: TextAlign.right,
+                style: GoogleFonts.vazirmatn(
+                  color: AppTheme.successColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
             ),
+            const SizedBox(width: 12),
+            Icon(Icons.check_circle, color: AppTheme.successColor),
           ],
         ),
       ),

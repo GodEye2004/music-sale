@@ -16,15 +16,19 @@ class BeatInfoWidget extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Title
-        Text(
-          beat.title,
-          style: Theme.of(context).textTheme.displaySmall,
+        Align(
+          alignment: .centerRight,
+          child: Text(
+            beat.title,
+            style: Theme.of(context).textTheme.displaySmall,
+          ),
         ),
 
         const SizedBox(height: 8),
 
         // Producer
         Row(
+          mainAxisAlignment: MainAxisAlignment.end,
           children: [
             const Icon(
               Icons.person,
@@ -73,14 +77,20 @@ class BeatInfoWidget extends StatelessWidget {
         const SizedBox(height: 24),
 
         // Description
-        Text(
-          'توضیحات:',
-          style: Theme.of(context).textTheme.headlineMedium,
+        Align(
+          alignment: .centerRight,
+          child: Text(
+            'توضیحات',
+            style: Theme.of(context).textTheme.headlineMedium,
+          ),
         ),
         const SizedBox(height: 8),
-        Text(
-          beat.description,
-          style: Theme.of(context).textTheme.bodyLarge,
+        Align(
+          alignment: .centerRight,
+          child: Text(
+            beat.description,
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
         ),
       ],
     );

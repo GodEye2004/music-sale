@@ -44,7 +44,7 @@ class BeatDetailController {
       
       final response = await Supabase.instance.client
           .from('beats')
-          .select('preview_path')
+          .select('audio_url')
           .eq('id', beat.id)
           .maybeSingle();
 
@@ -53,7 +53,7 @@ class BeatDetailController {
         return;
       }
 
-      final filePath = (response as Map<String, dynamic>)['preview_path'] as String?;
+      final filePath = (response as Map<String, dynamic>)['audio_url'] as String?;
       
       if (filePath == null || filePath.isEmpty) {
         print('Preview path is empty');

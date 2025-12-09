@@ -68,6 +68,7 @@ dependencies:
   
   # Supabase Backend
   supabase_flutter: ^2.7.0
+  google_fonts: ^6.3.3
 
 dev_dependencies:
   flutter_test:

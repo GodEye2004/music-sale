@@ -6,6 +6,7 @@ import 'package:flutter_application_1/services/database_service.dart';
 import 'package:flutter_application_1/screens/producer/upload_beat_screen.dart';
 import 'package:flutter_application_1/widgets/beat_card.dart';
 import 'package:flutter_application_1/screens/buyer/pages/beat_detail_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class MyBeatsScreen extends StatefulWidget {
   const MyBeatsScreen({super.key});
@@ -53,7 +54,14 @@ class _MyBeatsScreenState extends State<MyBeatsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('بیت‌های من'),
+        title: Text(
+          'بیت‌های من',
+          style: GoogleFonts.vazirmatn(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _refreshBeats),
         ],
@@ -73,7 +81,11 @@ class _MyBeatsScreenState extends State<MyBeatsScreen> {
                   const SizedBox(height: 16),
                   Text(
                     'هنوز بیتی آپلود نکرده‌اید',
-                    style: Theme.of(context).textTheme.titleLarge,
+                    style: GoogleFonts.vazirmatn(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton.icon(
@@ -88,7 +100,14 @@ class _MyBeatsScreenState extends State<MyBeatsScreen> {
                       }
                     },
                     icon: const Icon(Icons.add),
-                    label: const Text('آپلود اولین بیت'),
+                    label: Text(
+                      'آپلود اولین بیت',
+                      style: GoogleFonts.vazirmatn(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -130,7 +149,14 @@ class _MyBeatsScreenState extends State<MyBeatsScreen> {
                 }
               },
               icon: const Icon(Icons.add),
-              label: const Text('بیت جدید'),
+              label: Text(
+                'بیت جدید',
+                style: GoogleFonts.vazirmatn(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             )
           : null,
     );

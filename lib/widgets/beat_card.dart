@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/config/theme.dart';
 import 'package:flutter_application_1/models/beat_model.dart';
 import 'package:flutter_application_1/screens/buyer/pages/beat_detail_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class BeatCard extends StatelessWidget {
   final Beat beat;
@@ -74,7 +75,18 @@ class BeatCard extends StatelessWidget {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            // BPM Badge
+                            // Like Button (سمت چپ)
+                            Icon(
+                              beat.likes > 0
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
+                              size: 20,
+                              color: beat.likes > 0
+                                  ? AppTheme.secondaryColor
+                                  : Colors.white,
+                            ),
+
+                            // BPM Badge (سمت راست)
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 6,
@@ -93,17 +105,6 @@ class BeatCard extends StatelessWidget {
                                 ),
                               ),
                             ),
-
-                            // Like Button
-                            Icon(
-                              beat.likes > 0
-                                  ? Icons.favorite
-                                  : Icons.favorite_border,
-                              size: 20,
-                              color: beat.likes > 0
-                                  ? AppTheme.secondaryColor
-                                  : Colors.white,
-                            ),
                           ],
                         ),
                       ),
@@ -113,40 +114,42 @@ class BeatCard extends StatelessWidget {
               ),
             ),
 
-            // Beat Info
+            // Beat Info - همه متن‌ها راست‌چین
             Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   // Title
                   Text(
                     beat.title,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleLarge?.copyWith(fontSize: 14),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.vazirmatn(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.right,
                   ),
 
                   const SizedBox(height: 4),
 
                   // Producer Name
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      const Icon(
-                        Icons.person_outline,
-                        size: 14,
-                        color: AppTheme.textSecondaryColor,
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
+                      Flexible(
                         child: Text(
                           beat.producerName,
                           style: Theme.of(context).textTheme.bodySmall,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.right,
                         ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.person_outline,
+                        size: 14,
+                        color: AppTheme.textSecondaryColor,
                       ),
                     ],
                   ),
@@ -155,7 +158,18 @@ class BeatCard extends StatelessWidget {
 
                   // Genre and Key
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
+                      // Key
+                      Text(
+                        beat.musicalKey,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppTheme.textHintColor,
+                        ),
+                      ),
+
+                      const SizedBox(width: 6),
+
                       // Genre
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -174,16 +188,6 @@ class BeatCard extends StatelessWidget {
                           ),
                         ),
                       ),
-
-                      const SizedBox(width: 6),
-
-                      // Key
-                      Text(
-                        beat.musicalKey,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppTheme.textHintColor,
-                        ),
-                      ),
                     ],
                   ),
 
@@ -197,6 +201,7 @@ class BeatCard extends StatelessWidget {
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
+                    textAlign: TextAlign.right,
                   ),
                 ],
               ),

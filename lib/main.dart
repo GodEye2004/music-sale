@@ -4,7 +4,6 @@ import 'package:flutter_application_1/models/user_model.dart';
 import 'package:flutter_application_1/screens/auth/login_screen.dart';
 import 'package:flutter_application_1/screens/buyer/pages/home_screen.dart';
 import 'package:flutter_application_1/screens/producer/dashboard_screen.dart';
-import 'package:flutter_application_1/startup_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_application_1/config/theme.dart';
 import 'package:flutter_application_1/services/auth_service.dart';
